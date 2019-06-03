@@ -55,15 +55,14 @@ func (s *server) newHandler() http.Handler {
 func (s *server) handleWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		errorMsg := "[ERROR] Failed to upgrade request, %v"
-
-		log.Printf(errorMsg, err)
-		fmt.Fprintf(w, errorMsg, err)
+		log.Printf("[ERROR] Failed to upgrade request, %v", err)
+		return
 	}
 
-	go s.messageService.RegisterAndServe(conn)
+	client := messaging.NewWSClient(conn)
+	s.messageService.Register(client)
 
-	fmt.Fprint(w, "Connected")
+	go client.Serve()
 }
 
 func main() {
