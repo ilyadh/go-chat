@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/ilyadh/go-chat/chat"
@@ -73,15 +75,38 @@ func main() {
 
 	switch os.Args[1] {
 	case "server":
+		ctx, cancel := context.WithCancel(context.Background())
+
+		go func() {
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, os.Interrupt)
+			<-stop
+			log.Printf("[WARN] Graceful shutdown")
+			cancel()
+		}()
+
 		messageService := chat.NewService()
-
-		go messageService.Run(context.Background())
-
 		server := &server{
 			messageService: messageService,
 		}
+		done := make(chan struct{}, 2)
 
-		server.run()
+		go func() {
+			server.run()
+			done <- struct{}{}
+		}()
+		go func() {
+			messageService.Run(ctx)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+
+			server.httpServer.Shutdown(ctx)
+			done <- struct{}{}
+		}()
+
+		for i := 0; i < cap(done); i++ {
+			<-done
+		}
 	case "client":
 		clientFlagSet.Parse(os.Args[2:])
 
