@@ -1,4 +1,4 @@
-package messaging
+package chat
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Client represents a messaging Service client
+// Client represents a chat Service client
 type Client interface {
 	ID() string
 
@@ -28,7 +28,7 @@ type Service struct {
 	broadcast  chan *payload
 }
 
-// NewService creates a new messaging Service
+// NewService creates a new chat Service
 func NewService() *Service {
 	return &Service{
 		clients:    make(map[Client]bool),
@@ -38,7 +38,7 @@ func NewService() *Service {
 	}
 }
 
-// Run starts the messaging service
+// Run starts the chat service
 func (s *Service) Run(ctx context.Context) {
 	for {
 		select {
@@ -69,7 +69,7 @@ func (s *Service) Run(ctx context.Context) {
 					log.Printf("[ERROR] %v", err)
 				}
 			}
-			log.Printf("[WARN] Messaging service shutdown")
+			log.Printf("[WARN] Chat service shutdown")
 			return
 		}
 	}

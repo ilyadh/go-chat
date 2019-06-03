@@ -13,7 +13,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/websocket"
-	"github.com/ilyadh/go-chat/messaging"
+	"github.com/ilyadh/go-chat/chat"
 )
 
 type config struct{}
@@ -21,7 +21,7 @@ type config struct{}
 type server struct {
 	config *config
 
-	messageService *messaging.Service
+	messageService *chat.Service
 
 	upgrader   *websocket.Upgrader
 	httpServer *http.Server
@@ -59,7 +59,7 @@ func (s *server) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := messaging.NewWSClient(conn)
+	client := chat.NewWSClient(conn)
 	s.messageService.Register(client)
 
 	go client.Serve()
@@ -73,7 +73,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "server":
-		messageService := messaging.NewService()
+		messageService := chat.NewService()
 
 		go messageService.Run(context.Background())
 
