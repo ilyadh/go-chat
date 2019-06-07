@@ -12,10 +12,10 @@ type Client interface {
 	ID() string
 
 	Serve()
-	Send([]byte)
+	Send(message []byte)
 
-	SetReceiveHandler(func(Client, []byte))
-	SetShutdownHandler(func(Client))
+	SetReceiveHandler(func(message []byte))
+	SetShutdownHandler(func())
 
 	Shutdown(context.Context) error
 }
@@ -77,11 +77,11 @@ func (s *Service) Run(ctx context.Context) {
 
 // Register adds Client to list of Clients
 func (s *Service) Register(client Client) {
-	client.SetReceiveHandler(func(c Client, message []byte) {
-		s.broadcast <- &payload{message: message, client: c}
+	client.SetReceiveHandler(func(message []byte) {
+		s.broadcast <- &payload{message: message, client: client}
 	})
-	client.SetShutdownHandler(func(c Client) {
-		s.unregister <- c
+	client.SetShutdownHandler(func() {
+		s.unregister <- client
 	})
 
 	s.register <- client

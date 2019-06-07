@@ -19,8 +19,8 @@ type WSClient struct {
 
 	send chan []byte
 
-	handleReceive  func(Client, []byte)
-	handleShutdown func(Client)
+	handleReceive  func([]byte)
+	handleShutdown func()
 
 	shutdown chan struct{}
 	ok       chan struct{}
@@ -32,8 +32,8 @@ func NewWSClient(conn *websocket.Conn) *WSClient {
 		id:             uuid.New(),
 		conn:           conn,
 		send:           make(chan []byte),
-		handleReceive:  func(Client, []byte) {},
-		handleShutdown: func(Client) {},
+		handleReceive:  func([]byte) {},
+		handleShutdown: func() {},
 
 		shutdown: make(chan struct{}),
 		ok:       make(chan struct{}),
@@ -64,7 +64,7 @@ func (c *WSClient) Serve() {
 
 			go func() {
 				// Notify the Service so it stops sending messages to us and we can close the channel
-				c.handleShutdown(c)
+				c.handleShutdown()
 				close(c.send)
 			}()
 			// Drain send channel
@@ -110,12 +110,12 @@ func (c *WSClient) Send(message []byte) {
 }
 
 // SetReceiveHandler sets callback to be called when client reads a text message from the connection
-func (c *WSClient) SetReceiveHandler(handler func(Client, []byte)) {
+func (c *WSClient) SetReceiveHandler(handler func(message []byte)) {
 	c.handleReceive = handler
 }
 
 // SetShutdownHandler sets callback to be called after client performs a shutdown
-func (c *WSClient) SetShutdownHandler(handler func(Client)) {
+func (c *WSClient) SetShutdownHandler(handler func()) {
 	c.handleShutdown = handler
 }
 
@@ -213,6 +213,6 @@ func (c *WSClient) readMessages() error {
 			continue
 		}
 
-		c.handleReceive(c, message)
+		c.handleReceive(message)
 	}
 }
